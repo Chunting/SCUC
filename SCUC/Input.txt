@@ -1,0 +1,90 @@
+*****************************************************
+*   SCUC模块输入文件格式		*
+*****************************************************
+
+【SystemData.dat】系统信息文件格式
+		IloInt cycle; //调度时段数,整型变量
+		IloInt demandNum; //负荷节点个数
+		IloInt lineNum; //传输线个数
+		IloInt busNum;	//节点个数
+		IloInt sectionNum; //断面个数
+		IloInt thUnitNum; //火电机组台数
+		IloInt hyUnitNum; //水电机组台数
+		IloInt wFieldNum; //风场数量
+		IloInt sPlantNum; //光伏电厂数量
+
+【AppData.dat】系统输入参数文件格式
+		IloNumArray sysDemand(env,cycle); // 系统负载
+		IloNumArray sysReserve(env,cycle+1); //系统备用需求
+		Matrix2 windPower(env,wFieldNum);    //各时段各风电场出力
+		
+【NetData.dat】网络信息文件格式
+		IloNumArray unitLocation; 				//火电机组所在节点编号
+		IloNumArray demandLocation(env,demandNum);           	//负载所在节点编号，为demandNum维数组
+		IloNumArray demand(env,demandNum);                    	//各负载需求系数
+									//系统总负荷
+		IloNumArray lineCap(env,lineNum);											//传输能力
+		IloNumArray upSectionCap(env,sectionNum);		//断面功率上限
+		IloNumArray downSectionCap(env,sectionNum);		//断面功率下限
+		IloNumArray linSectionNum(env,sectionNum);		//断面中线路的个数
+		Matrix2D linSection(env,sectionNum);									//断面中的具体线路,矩阵[断面号][线路号]
+		for(i_sec=0;i_sec<sectionNum;i_sec++)
+		{
+			linSection[i_sec]=IloNumArray(env,linSectionNum[i_sec]);
+		}
+		
+		
+【GamaData.dat】Gama阵文件格式
+		Matrix2D gama(env,lineNum);				//Gama阵,矩阵[线路号][节点号]
+		for(l=0;l<lineNum;l++)
+		{
+			gama[l]=IloNumArray(env,busNum);
+		}
+		
+		
+【ThUnitData.dat】火电信息文件格式
+	IloEnv env,                                   	//定义环境变量
+	IloNumArray thminPower,                        	//机组最小发电量
+	IloNumArray thmaxPower,                        	//机组最大发电量
+	IloNumArray thminDown,                         	//机组最小关机时间
+	IloNumArray thminUp,                           	//机组最小开机时间
+	IloNumArray thcoldUpTime,                      	//冷启动时间
+	IloNumArray thfuelCostPieceNum,                	//燃料费用曲线段数
+	IloNumArray thhotUpCost,                       	//热启动费用
+	IloNumArray thcoldUpCost,						//冷启动费用 IloNumArray& hotUpTime
+	IloNumArray thdelta,							//爬升
+	IloNumArray thfirstLast,                       	//首末开机约束，取0，1
+	IloNumArray thmaxR,                            	//机组最大备用	
+	IloNumArray tha,								//燃料费用曲线上系数a		
+	IloNumArray thb,								//燃料费用曲线上系数b		
+	IloNumArray thc,								//燃料费用曲线上系数c
+	IloNumArray thminFuelCost,                      //机组最小发电费用
+	IloNumArray thmaxFuelCost,                      //机组最大发电费用
+	IloNumArray thinitState,                        //机组初始状态
+	IloNumArray thinitPower                        	//机组初始发电量		
+		
+		
+【WindData.dat】风电信息文件格式
+		IloNumArray windLocation(env,wFieldNum);		//风电场位置
+		IloNumArray maxWindPower(env,wFieldNum);		//风电场出力上限
+		IloNumArray minWindPower(env,wFieldNum);		//风电场出力下限
+		
+		
+【HydData.dat】水电信息文件格式
+		IloNumArray hyUnitLocation(env,hyUnitNum);		//水电机组位置
+		IloNumArray maxHyUnitPower(env,hyUnitNum);		//水电机组出力上限
+		IloNumArray minHyUnitPower(env,hyUnitNum);		//水电机组出力下限
+
+
+【SolarData.dat】光伏信息文件格式
+		IloNumArray sPlantLocation(env,sPlantNum);	//光电厂位置
+		Matrix2D maxSPlantPower(env,sPlantNum);		//光电厂最大预测出力
+		for(s=0;s<sPlantNum;s++)
+		{
+			maxSPlantPower[s]=IloNumArray(env,cycle);
+		}
+		Matrix2D minSPlantPower(env,sPlantNum);		//光电厂最小预测出力
+		for(s=0;s<sPlantNum;s++)
+		{
+			minSPlantPower[s]=IloNumArray(env,cycle);
+		}
