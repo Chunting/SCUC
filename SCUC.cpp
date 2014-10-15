@@ -330,13 +330,6 @@ int readThUnitData(char* thunitdata,
 		fin>>thmaxR[i];
 	}
 
-	//read a
-	/*
-	for(i=0;i<thUnitNum;i++)
-	{
-		fin>>tha[i];
-	}
-*/
 	//read b
 	for(i=0;i<thUnitNum;i++)
 	{
@@ -433,7 +426,7 @@ void readHydData(IloEnv env,
 {
 	ifstream fin(HYDDATA,ios::in);
 	if(!fin) env.out()<<"problem with file:" << HYDDATA <<endl;
-	int i,k;
+	int k = 0;
 
 	for(k=0;k<hyUnitNum;k++)
 	{
@@ -473,7 +466,7 @@ void readSolarData(IloEnv env,
 {
 	ifstream fin(SOLARDATA,ios::in);
 	if(!fin) env.out()<<"problem with file:" << SOLARDATA <<endl;
-	int i,j,t;
+	int i, t;
 
 	for(i=0;i<sPlantNum;i++)
 	{
@@ -861,11 +854,23 @@ int main(int argc, char *argv[])
 		{
 			tfile << maxHyUnitPower[k] <<" ";
 		}
-		tfile<<endl<<"minHyUnitPower[k]"<<endl;
+		tfile<<endl<<"minHyUnitPower"<<endl;
 		for(k=0; k<hyUnitNum; ++k)
 		{
 			tfile<<minHyUnitPower[k]<<" ";
 		}
+
+		tfile<<endl << "max Wind Power"<< endl;
+
+		for(w = 0; w<wFieldNum; w++)
+		{
+			tfile << maxWindPower[w] <<" ";
+		}
+		tfile<<endl<<"min Wind Power"<<endl;
+		for(w=0;w<wFieldNum;w++)
+		{
+			tfile<<minWindPower[w]<<" ";
+		 }
 		
 		tfile.close();
 
@@ -901,20 +906,6 @@ int main(int argc, char *argv[])
 			upCost[i] = IloNumVarArray(env,cycle+1,0,thcoldUpCost[i],ILOFLOAT);
 			fuelCost[i] = IloNumVarArray(env,cycle+1,0,thmaxFuelCost[i],ILOFLOAT);
 		}
-
-
-
-		//水电变量
-		/*
-		VarMatrix2 hyPower(env,hyUnitNum);
-		for(k=0; k<hyUnitNum; k++)
-		{
-			hyPower[k] = IloNumVarArray(env,cycle,minHyUnitPower[k],maxHyUnitPower[k],ILOFLOAT);
-		}
-		*/
-		
-
-		
 		//***********************************************约束******************************************
 		/***************  Within the multi power system, the constraint is still ok or not ? *************/
 		//可行解约束
@@ -1029,8 +1020,8 @@ int main(int argc, char *argv[])
 			{
 				for(t=1;t<=(thminUp[i]-thinitState[i]);t++)
 				{
-					model.add(shutDown[i][t]==0);
-					model.add(state[i][t]==1);
+					model.add(shutDown[i][t] == 0);
+					model.add(state[i][t] == 1);
 				}
 			}
 		}
@@ -1042,16 +1033,16 @@ int main(int argc, char *argv[])
 				IloNum temp=IloMin(cycle,(t+thminUp[i]+thminDown[i]-1));
 				IloExpr sum1(env);
 				IloExpr sum2(env);
-				for(j=t;j<=temp;j++)
+				for(j=t; j<=temp; j++)
 				{
 					sum1+=startUp[i][j];
 				}
 				for(j=t;j<=temp;j++)
 				{
-					sum2+=shutDown[i][j];
+					sum2 += shutDown[i][j];
 				}
-				model.add(sum1-1<=0);
-				model.add(sum2-1<=0);
+				model.add(sum1-1 <= 0);
+				model.add(sum2-1 <= 0);
 			}
 		}
 
@@ -1060,16 +1051,7 @@ int main(int argc, char *argv[])
 		{
 			for(t=1;t<cycle+1;t++)
 			{
-				model.add (fuelCost[i][t] == thb[i]*thermalPower[i][t]+thc[i]);
-			}
-		}
-
-		//火电机组提供的备用
-		for(i=0;i<thUnitNum;i++)
-		{
-			for(t=1;t<cycle+1;t++)
-			{
-				model.add(thermalR[i][t] == IloMin(thmaxPower[i]*state[i][t] - thermalPower[i][t], thmaxR[i]*state[i][t]));
+				model.add (fuelCost[i][t] == thb[i]*thermalPower[i][t] + thc[i]);
 			}
 		}
 
@@ -1085,14 +1067,11 @@ int main(int argc, char *argv[])
 
 		//爬升，首末开机
 
-
-		//***************************************************
-		//********************add by hx,爬升约束***********************
 		for (i=0;i<thUnitNum; i++)
 		{
 			for (t=1; t<cycle+1;t++)
 			{
-	      model.add(IloAbs(thermalPower[i][t] - thermalPower[i][t-1]) <= thdelta[i]);
+				model.add(IloAbs(thermalPower[i][t] - thermalPower[i][t-1]) <= thdelta[i]);
 			}
 
 		}
@@ -1108,22 +1087,22 @@ int main(int argc, char *argv[])
 			IloExpr solarsum(env);		//光电
 			IloExpr outputsum(env);     //外送
 			IloExpr secsum(env);		//断面
-			for(int i=0;i<thUnitNum;i++)
+			for(i=0;i<thUnitNum;i++)
 			{
 				thsum += thermalPower[i][t];
 			}
 
-			for(int k=0;k<hyUnitNum;k++)
+			for(k=0;k<hyUnitNum;k++)
 			{
 				hydsum += hyPower[k][t];
 			}
 
-			for(int w=0;w<wFieldNum;w++)
+			for(w=0;w<wFieldNum;w++)
 			{
 				windsum += windPower[w][t];
 			}
 
-			for(int s=0;s<sPlantNum;s++)
+			for(s=0;s<sPlantNum;s++)
 			{
 				solarsum += maxSPlantPower[s][t];
 			}
@@ -1135,7 +1114,6 @@ int main(int argc, char *argv[])
 			{
 				outputsum += outputPower[i][t];
 			}
-			//model.add(sysDemand[t]==thsum);	
 			model.add(demandsum  == thsum + hydsum + windsum + solarsum + outputsum );
 		}
 
@@ -1143,13 +1121,22 @@ int main(int argc, char *argv[])
 		/*					Spinning reserve	       		By Chun-Ting	    */
 		/************************************************************************/
 		//VarMatrix2 outputPower(env,outputNum);
-		VarMatrix2 windR(env,wFieldNum);
-		VarMatrix2 hydroR(env,hyUnitNum);
+		VarMatrix2 windR1(env,wFieldNum);
+		VarMatrix2 hydroR1(env,hyUnitNum);
+		VarMatrix2 windR2(env,wFieldNum);
+		VarMatrix2 hydroR2(env,hyUnitNum);
 		for(w=0; w<wFieldNum; ++w)
-			windR[w] = IloNumVarArray(env,cycle+1,0,maxWindPower[w],ILOFLOAT);
-		
+			windR1[w] = IloNumVarArray(env,cycle+1,0,maxWindPower[w],ILOFLOAT);
+
 		for(k=0; k<hyUnitNum; ++k)
-			hydroR[k] = IloNumVarArray(env,cycle+1,0,maxHyUnitPower[k],ILOFLOAT);
+			hydroR1[k] = IloNumVarArray(env,cycle+1,0 ,maxHyUnitPower[k],ILOFLOAT);
+
+		for(w=0; w<wFieldNum; ++w)
+			windR2[w] = IloNumVarArray(env,cycle+1,0,maxWindPower[w],ILOFLOAT);
+
+		for(k=0; k<hyUnitNum; ++k)
+			hydroR2[k] = IloNumVarArray(env,cycle+1,0, maxHyUnitPower[k],ILOFLOAT);
+
 		for(t=1;t<cycle+1;t++)
 		{
 			IloExpr thsum(env);
@@ -1162,37 +1149,37 @@ int main(int argc, char *argv[])
 			//IloExpr outputRN(env);
 			for(i=0;i<thUnitNum;i++)
 			{
-				model.add(thermalR[i][t] == IloMin(thmaxPower[i]*state[i][t] - thermalPower[i][t], thmaxR[i]*state[i][t]));
+				model.add(thermalR[i][t] <= IloMin(thmaxPower[i]*state[i][t] - thermalPower[i][t], thmaxR[i]*state[i][t]));
 				model.add(thermalRN[i][t] == IloMin(thermalPower[i][t] - thminPower[i]*state[i][t], thmaxR[i]*state[i][t]));
 				thsum += thermalR[i][t];
 				thsumN += thermalRN[i][t];
 			}
-			
+
 			for(w=0; w<wFieldNum;++w)
 			{
-				model.add(windR[w][t] == IloMin(r*windPower[w][t], maxWindPower[w]-windPower[w][t]));
-				windRP += windR[w][t];
-				windRN += r*windPower[w][t];
+				model.add(windR1[w][t] == IloMin(r*windPower[w][t], maxWindPower[w]-windPower[w][t]));
+				model.add(windR2[w][t] == IloMin(r*windPower[w][t], windPower[w][t]-minWindPower[w]));
+				windRP += windR2[w][t];
+				windRN += windR1[w][t];
 			}
-			/*
+
 			for(k=0;k<hyUnitNum;k++)
 			{
-				model.add(hydroR[k][t] == maxHyUnitPower[k] - hyPower[k][t]);
-				hysum += hydroR[k][t];
-				hysumN += hyPower[k][t];
+        if( hyPower[k][t] < 0 ) hyPower[k][t] = 0;
+        if( hyPower[k][t] > maxHyUnitPower[k] ) hyPower[k][t] = maxHyUnitPower[k];
+				model.add(hydroR1[k][t] == IloAbs( maxHyUnitPower[k] - hyPower[k][t] ));
+				model.add(hydroR2[k][t] == IloAbs( hyPower[k][t] - minHyUnitPower[k] ));
+				hysum += hydroR1[k][t];
+				hysumN += hydroR2[k][t];
 			}
-      */
-		//	model.add(thsum + hysum  >= sysReserve[t] );  //正备用约束
-		//	model.add(thsum + hysum  >= sysReserve[t] + windRN);  //正备用约束
-		//	model.add(thsumN + hysumN >= 0.8*sysReserve[t] + windR);  //负备用约束
+			model.add(thsum + hysum  >= sysReserve[t] + windRP);  //正备用约束
+			model.add(thsumN + hysumN >= sysReserve[t] +  windRN);  //负备用约束
 		}
-
 
 			/**************************************************************/
 			//传输线安全约束
-    
-			for(t=1; t<cycle+1; t++)
-			{		
+			for(t=1;t<cycle+1;t++)
+			{
 				for(l=0;l<lineNum;l++)
 				{
 					IloExpr thsum(env);			//火电
@@ -1230,10 +1217,10 @@ int main(int argc, char *argv[])
 					for (o= 0; o < outputNum; ++o)
 					{
 						sumGamaO += gama[l][outputLocation[o]-1]*outputPower[o][t];
-					} 
-					model.add(thsum + hydsum + windsum + solarsum - sumGamaO - demandsum + lineCap[l] >= 0);
+					}
+					model.add(thsum + hydsum + windsum + solarsum + sumGamaO - demandsum + 4*lineCap[l] >= 0);
           // The constraint below doesn't work.
-					//model.add(thsum + hydsum + windsum + solarsum -  sumGamaO - demandsum - lineCap[l] <= 0 );
+					model.add(thsum + hydsum + windsum + solarsum +  sumGamaO - demandsum - 4*lineCap[l] <= 0 );
 				}
 			}
 
@@ -1250,8 +1237,7 @@ int main(int argc, char *argv[])
 					IloExpr secsum(env);		//断面
 					int i_linsec=0;
 					l=linSection[i_sec][0];
-					while(l<=linSectionNum[i_sec])
-					{				
+					while(l<=linSectionNum[i_sec]) {
 						for(i=0;i<thUnitNum;i++)
 						{
 							thsum+=gama[l][unitLocation[i]-1]*thermalPower[i][t];
@@ -1289,10 +1275,8 @@ int main(int argc, char *argv[])
 */
 			//建立优化目标函数
 			IloExpr obj(env);
-			for(t=1;t<cycle+1;t++)
-			{
-				for(i=0;i<thUnitNum;i++)  
-				{
+			for(t=1;t<cycle+1;t++)	{
+				for(i=0;i<thUnitNum;i++) {
 					obj+=fuelCost[i][t]+upCost[i][t];
 				}
 
@@ -1315,7 +1299,6 @@ int main(int argc, char *argv[])
 			env.out() << "solution time   = " <<timer.getTime()<<endl;
 			env.out() << "EpGap           = " <<cplex.getParam(cplex.EpGap)<<endl;
 
-
 			ofstream outf(OUTFILERESULT,ios::out);
 			if(!outf)
 				cout<<"cannot open 'result.dat'"<<OUTFILERESULT<<endl;
@@ -1324,7 +1307,7 @@ int main(int argc, char *argv[])
 			outf<<"Solution status\t"<<cplex.getStatus()<<endl;
 			outf<<"Solution value\t"<<cplex.getObjValue()<<endl;
 			outf<<"Solution time\t"<<timer.getTime()<<endl;
-			outf<<"EpGap\t"<<cplex.getParam(cplex.EpGap)<<endl; 
+			outf<<"EpGap\t"<<cplex.getParam(cplex.EpGap)<<endl;
 			double allFuelCost=0;
 			for(i=0;i<thUnitNum;i++)
 			{
@@ -1333,10 +1316,10 @@ int main(int argc, char *argv[])
 					allFuelCost+=cplex.getValue(fuelCost[i][t]);
 				}
 			}
-			cout<<endl<<"allFuelCost="<<allFuelCost<<endl;
+			cout<<endl<<"allFuelCost = "<<allFuelCost<<endl;
 			outf<<"allFuelCost\t"<<allFuelCost<<endl;
 			if(!outf)
-				cout<<"cannot open 'result.dat'"<<OUTFILERESULT<<endl;
+				cout<<"cannot open 'Result.dat'"<<OUTFILERESULT<<endl;
 			outf<<"state"<<endl;
 			for(t=1;t<cycle+1;t++)
 			{
@@ -1347,13 +1330,13 @@ int main(int argc, char *argv[])
 					else
 						outf<<cplex.getValue(state[i][t])<<"\t";
 				}
-				outf<<endl;        
+				outf<<endl;
 			}
 
 			outf<<endl<<"thermalPower"<<endl;
-			for(t=1;t<cycle+1;t++)
+			for(i=0;i<thUnitNum;i++)
 			{
-				for(i=0;i<thUnitNum;i++)
+				for(t=1;t<cycle+1;t++)
 				{
 					if(cplex.getValue(thermalPower[i][t])<_INF)
 						outf<<"0\t";
@@ -1361,13 +1344,12 @@ int main(int argc, char *argv[])
 						outf<<cplex.getValue(thermalPower[i][t])<<"\t";
 				}
 				outf<<endl;
-
 			}
 
 			outf<<endl<<"thermalR"<<endl;
-			for(t=1;t<cycle+1;t++)
+			for(i=0;i<thUnitNum;i++)
 			{
-				for(i=0;i<thUnitNum;i++)
+				for(t=1;t<cycle+1;t++)
 				{
 					if(cplex.getValue(thermalR[i][t])<1e-7)
 						outf<<"0\t";
@@ -1377,15 +1359,10 @@ int main(int argc, char *argv[])
 				outf<<endl;
 			}
 
-
-
-
 			outf<<"current[l][t]"<<endl;
-			double current[100][200];
-			for (t = 1; t < cycle+1; t++)
-			{				 		 
-				for(l= 0; l< lineNum; l++)
-				{
+			double current[655][97];
+			for(l= 0; l< lineNum; l++) {
+			for (t = 1; t < cycle+1; t++)	{
 					double gamap=0;
 					for (i = 0; i < thUnitNum; i++)
 					{
@@ -1395,8 +1372,8 @@ int main(int argc, char *argv[])
 					for (d = 0; d < demandNum; d++)
 					{
 						gamaD+=gama[l][demandLocation[d]-1]*Demand[d][t];
-					} 
-					current[l][t]=gamap-gamaD;	
+					}
+          current[l][t]=gamap-gamaD;
 					outf<<current[l][t]<<"\t";
 
 				}
@@ -1406,17 +1383,17 @@ int main(int argc, char *argv[])
 			outf<<endl;
 
 		}
-		catch (IloException& e) 
+		catch (IloException& e)
 		{
 			cerr << "Concert exception caught: " << e << endl;
 		}
 
-		catch (...) 
+		catch (...)
 		{
 			cerr << "Unknown exception caught" << endl;
 		}
 
 		env.end();
-		system("pause"); 
+	//	system("pause");
 		return 0;
 	}
