@@ -12,22 +12,22 @@ By Chunting
 #include <ilconcert/ilomodel.h>
 
 /************************ Define all the files ***************************************************/
-#define OUTFILEDATA "./New_Output/Check.dat"    
+#define OUTFILEDATA "./New_Output/Check.dat"
 #define OUTFILERESULT "./New_Output/Result.dat"
-#define lp "./New_Output/Model.lp"     
-#define SYSTEMDATA "./New_Input/SystemData.dat"   
-#define APPDATA "./New_Input/AppData.dat"    
+#define lp "./New_Output/Model.lp"
+#define SYSTEMDATA "./New_Input/SystemData.dat"
+#define APPDATA "./New_Input/AppData.dat"
 #define THUNITDATA "./New_Input/ThUnitData.dat"
 #define NETDATA "./New_Input/NetData.dat"
 #define GAMADATA "./New_Input/GamaData.dat"
-#define HYDDATA "./New_Input/HydData.dat"		
-#define WINDDATA "./New_Input/WindData.dat"		
+#define HYDDATA "./New_Input/HydData.dat"
+#define WINDDATA "./New_Input/WindData.dat"
 #define SOLARDATA "./New_Input/SolarData.dat"
 /************************ File End ***************************************************************/
 
 ILOSTLBEGIN
 /***************** typedef为 IloArray<IloNumArray> 起别名Matrix2，以便于后面运用时的书写**********/
-typedef IloArray<IloNumArray> Matrix2; 
+typedef IloArray<IloNumArray> Matrix2;
 typedef IloArray<Matrix2> Matrix3;
 typedef IloArray<Matrix3> Matrix4;
 typedef IloArray<Matrix4> Matrix5;
@@ -55,7 +55,7 @@ const double _INF=1E-7;//add by hx
 //************************************
 // Method:    readSystemData
 // FullName:  readSystemData
-// Access:    public 
+// Access:    public
 // Returns:   void
 // Qualifier:
 // Parameter: IloEnv env
@@ -63,10 +63,10 @@ const double _INF=1E-7;//add by hx
 // Parameter: IloInt & demandNum,demandNum, number of load, 11;
 // Parameter: IloInt & lineNum,number of transmission line, 39;
 // Parameter: IloInt & busNum, number of bus, 31;
-// Parameter: IloInt & sectionNum,numberof section, 1 
+// Parameter: IloInt & sectionNum,numberof section, 1
 // Parameter: IloInt & thUnitNum, number of thermal unit, 16;
 // Parameter: IloInt & hyUnitNum, number of hydroelectric station
-// Parameter: IloInt & wFieldNum, number of wind field, 3;	
+// Parameter: IloInt & wFieldNum, number of wind field, 3
 // Parameter: IloInt & sPlantNum, number of solar farm
 //************************************
 void readSystemData(IloEnv env,
@@ -77,13 +77,13 @@ void readSystemData(IloEnv env,
 					IloInt& outputNum,
 					IloInt& sectionNum,
 					IloInt& thUnitNum,
-					IloInt& hyUnitNum, 
+					IloInt& hyUnitNum,
 					IloInt& wFieldNum,
 					IloInt& sPlantNum
 					)
 {
 	ifstream fin(SYSTEMDATA,ios::in);
-	if(!fin) 
+	if(!fin)
 		env.out()<<"problem with file:" << SYSTEMDATA<<endl;
 	fin >> cycle;
 	fin >> demandNum;
@@ -105,11 +105,11 @@ void readSystemData(IloEnv env,
 //************************************
 // Method:    readNetData
 // FullName:  readNetData
-// Access:    public 
+// Access:    public
 // Returns:   void
 // Qualifier:
 // Parameter: IloEnv env
-// Parameter: IloNumArray & unitLocation	Thermal unit所在bus编号 
+// Parameter: IloNumArray & unitLocation	Thermal unit所在bus编号
 // Parameter: IloNumArray & demandLocation 负载所在bus编号
 // Parameter: IloNumArray & demand	各负载需求系数
 // Parameter: IloNumArray & sysDemand	系统在每个时刻的总负荷
@@ -121,14 +121,14 @@ void readSystemData(IloEnv env,
 //************************************
 void readNetData(IloEnv env,
 				 IloNumArray& unitLocation,
-				 IloNumArray& demandLocation,            	
+				 IloNumArray& demandLocation,
 				 Matrix2& Demand,
-				 IloNumArray& lineCap,	
-				 IloNumArray& outputLocation, 
-				 IloNumArray& upSectionCap,				
-				 IloNumArray& downSectionCap,				 
-				 IloNumArray& linSectionNum,				
-				 Matrix2& linSection				
+				 IloNumArray& lineCap,
+				 IloNumArray& outputLocation,
+				 IloNumArray& upSectionCap,
+				 IloNumArray& downSectionCap,
+				 IloNumArray& linSectionNum,
+				 Matrix2& linSection
 				 )
 {
 	ifstream fin(NETDATA,ios::in);
@@ -186,7 +186,7 @@ void readNetData(IloEnv env,
 //************************************
 // Method:    readGama
 // FullName:  readGama
-// Access:    public 
+// Access:    public
 // Returns:   int
 // Qualifier:
 // Parameter: char * gamgadata
@@ -196,8 +196,8 @@ void readNetData(IloEnv env,
 int readGama(char* gamgadata,IloEnv env,Matrix2& gama)
 {
 	int i,j;
-	ifstream fin(gamgadata,ios::in);		
-	if(!fin) 
+	ifstream fin(gamgadata,ios::in);
+	if(!fin)
 		env.out()<<"problem with "<< gamgadata<<endl;
 	//read gama
 	for(i=0;i<lineNum;i++)
@@ -215,7 +215,7 @@ int readGama(char* gamgadata,IloEnv env,Matrix2& gama)
 //************************************
 // Method:    readThUnitData
 // FullName:  readThUnitData
-// Access:    public 
+// Access:    public
 // Returns:   int
 // Qualifier:
 // Parameter: char * thunitdata
@@ -236,25 +236,22 @@ int readGama(char* gamgadata,IloEnv env,Matrix2& gama)
 // Parameter: Ilo
 //************************************
 int readThUnitData(char* thunitdata,
-				   IloEnv env,                                   //定义环境变量
-				   IloNumArray& thminPower,                        //机组最小发电量
-				   IloNumArray& thmaxPower,                        //机组最大发电量
-				   IloNumArray& thminDown,                         //机组最小关机时间
-				   IloNumArray& thminUp,                           //机组最小开机时间
-				   IloNumArray& thcoldUpTime,                      //冷启动时间
-				//   IloNumArray& thfuelCostPieceNum,                //燃料费用曲线段数
-				   IloNumArray& thhotUpCost,                       //热启动费用
-				   IloNumArray& thcoldUpCost,			           //冷启动费用 IloNumArray& hotUpTime
-				   IloNumArray& thdelta,						   //爬升
-				//   IloNumArray& thfirstLast,                       //首末开机约束，取0，1
-				   IloNumArray& thmaxR,                            //机组最大备用	
-				 //  IloNumArray& tha,							   //燃料费用曲线上系数a		
-				   IloNumArray& thb,							   //燃料费用曲线上系数b		
-				   IloNumArray& thc,						       //燃料费用曲线上系数c
-				   IloNumArray& thminFuelCost,                        //机组最小发电费用
-				   IloNumArray& thmaxFuelCost,                        //机组最大发电费用
-				   IloNumArray& thinitState,                        //机组初始状态
-				   IloNumArray& thinitPower                        //机组初始发电量			 
+				   IloEnv env,                     //定义环境变量
+				   IloNumArray& thminPower,        //机组最小发电量
+				   IloNumArray& thmaxPower,        //机组最大发电量
+				   IloNumArray& thminDown,         //机组最小关机时间
+				   IloNumArray& thminUp,           //机组最小开机时间
+				   IloNumArray& thcoldUpTime,      //冷启动时间
+				   IloNumArray& thhotUpCost,       //热启动费用
+				   IloNumArray& thcoldUpCost,      //冷启动费用 IloNumArray& hotUpTime
+				   IloNumArray& thdelta,				   //爬升
+				   IloNumArray& thmaxR,            //机组最大备用
+				   IloNumArray& thb,						   //燃料费用曲线上系数b
+				   IloNumArray& thc,						    //燃料费用曲线上系数c
+				   IloNumArray& thminFuelCost,      //机组最小发电费用
+				   IloNumArray& thmaxFuelCost,      //机组最大发电费用
+				   IloNumArray& thinitState,        //机组初始状态
+				   IloNumArray& thinitPower         //机组初始发电量
 				   )
 {
 	ifstream fin(thunitdata,ios::in);
@@ -369,7 +366,7 @@ int readThUnitData(char* thunitdata,
 //************************************
 // Method:    readWindData
 // FullName:  readWindData
-// Access:    public 
+// Access:    public
 // Returns:   void
 // Qualifier:
 // Parameter: IloEnv env
@@ -378,9 +375,9 @@ int readThUnitData(char* thunitdata,
 // Parameter: IloNumArray & minWindPower,lower bound of wind power
 //************************************
 void readWindData(IloEnv env,
-				  IloNumArray& windLocation,		
-				  IloNumArray& maxWindPower,		
-				  IloNumArray& minWindPower		
+				  IloNumArray& windLocation,
+				  IloNumArray& maxWindPower,
+				  IloNumArray& minWindPower
 				  )
 {
 	ifstream fin(WINDDATA,ios::in);
@@ -410,7 +407,7 @@ void readWindData(IloEnv env,
 //************************************
 // Method:    readHydData
 // FullName:  readHydData
-// Access:    public 
+// Access:    public
 // Returns:   void
 // Qualifier:
 // Parameter: IloEnv env
@@ -450,7 +447,7 @@ void readHydData(IloEnv env,
 //************************************
 // Method:    readSolarData
 // FullName:  readSolarData
-// Access:    public 
+// Access:    public
 // Returns:   void
 // Qualifier:
 // Parameter: IloEnv env
@@ -496,7 +493,7 @@ int main(int argc, char *argv[])
 {
 
 	IloEnv env;
-	int i,j,l,d,day;
+	int i,j,l,d;
 	int s = 0;
 	int w = 0;
 	int k = 0;
@@ -508,14 +505,13 @@ int main(int argc, char *argv[])
 		IloModel model(env);
 		IloTimer timer(env);
 		timer.start();
-		//*************读取系统变量***************************	
+		/*************读取系统变量***********************/
 		readSystemData(env,cycle,demandNum,lineNum,busNum,outputNum, sectionNum,thUnitNum,hyUnitNum,wFieldNum,sPlantNum);
 
 		ifstream fin(APPDATA,ios::in);
-		if(!fin) 
+		if(!fin)
 			env.out()<<"problem with file:"<<APPDATA<<endl;
 
-		//IloNumArray sysDemand(env,cycle+1);
 		IloNumArray sysReserve(env,cycle+1);
 		Matrix2 windPower(env,wFieldNum);
 		Matrix2 hyPower(env,hyUnitNum);
@@ -532,7 +528,6 @@ int main(int argc, char *argv[])
 		{
 			outputPower[o] = IloNumArray(env,cycle+1);
 		}
-		day=1;
 		//sysReserve
 		for(t=1;t<cycle+1;t++)
 			fin>> sysReserve[t];
@@ -555,13 +550,12 @@ int main(int argc, char *argv[])
 			}
 		}
 		env.out() << "APPDATA is ok !" << endl;
-		//*************读取网络数据，王圭070411**************************		
+		/*************读取网络数据，************************/
 		IloNumArray unitLocation(env,thUnitNum);
 		IloNumArray demandLocation(env,demandNum);
 		IloNumArray outputLocation(env,outputNum);
-		//IloNumArray demand(env,demandNum);
 		Matrix2 Demand(env, demandNum);				//修改后的负荷改为二维矩阵
-		IloNumArray lineCap(env,lineNum);	
+		IloNumArray lineCap(env,lineNum);
 		IloNumArray upSectionCap(env,sectionNum);	//断面功率上限
 		IloNumArray downSectionCap(env,sectionNum);	//断面功率下限
 		IloNumArray linSectionNum(env,sectionNum);	//断面中线路的个数
@@ -571,13 +565,11 @@ int main(int argc, char *argv[])
 			linSection[i_sec]=IloNumArray(env,linSectionNum[i_sec]);
 		}
 		for(d=0;d<demandNum; d++)
-		{	
+		{
 			Demand[d] = IloNumArray( env, cycle+1 );
 		}
-		readNetData(env,unitLocation, demandLocation,
-			//demand,sysDemand,
-			Demand,
-			lineCap,outputLocation,upSectionCap,downSectionCap,linSectionNum,linSection);	
+		readNetData(env,unitLocation, demandLocation,	Demand,
+			lineCap,outputLocation,upSectionCap,downSectionCap,linSectionNum,linSection);
 
 
 
@@ -592,10 +584,8 @@ int main(int argc, char *argv[])
 		IloNumArray thfuelCostPieceNum(env,thUnitNum);
 		IloNumArray thhotUpCost(env,thUnitNum);
 		IloNumArray thcoldUpCost(env,thUnitNum);
-		IloNumArray thdelta(env,thUnitNum);			
-	//	IloNumArray thfirstLast(env,thUnitNum);
+		IloNumArray thdelta(env,thUnitNum);
 		IloNumArray thmaxR(env,thUnitNum);
-	//	IloNumArray tha(env,thUnitNum);
 		IloNumArray thb(env,thUnitNum);
 		IloNumArray thc(env,thUnitNum);
 		IloNumArray thinitState(env,thUnitNum);
@@ -610,14 +600,11 @@ int main(int argc, char *argv[])
 			thminDown,                         //机组最小关机时间
 			thminUp,                           //机组最小开机时间
 			thcoldUpTime,                      //冷启动时间
-		//	thfuelCostPieceNum,                //燃料费用曲线段数
 			thhotUpCost,                       //热启动费用
 			thcoldUpCost,			           //冷启动费用
 			thdelta,						      //爬升
-		//	thfirstLast,                       //首末开机约束，取0，1
-			thmaxR,                          //机组最大备用	
-			//tha,							     //燃料费用曲线上系数a		
-			thb,							     //燃料费用曲线上系数b		
+			thmaxR,                          //机组最大备用
+			thb,							     //燃料费用曲线上系数b
 			thc,
 			thminFuelCost,
 			thmaxFuelCost,
@@ -760,7 +747,7 @@ int main(int argc, char *argv[])
 		}
 		tfile<<"***************************火电数据************************88"<<endl;
 	/*
-	tfile<<endl<<"Gama: ---------Begin-------"<<endl; 
+	tfile<<endl<<"Gama: ---------Begin-------"<<endl;
 		tfile<<"busNum "<<busNum<<" linNum "<<lineNum<<endl;
 		for(j=0;j<lineNum;j++)
 		{
@@ -770,8 +757,8 @@ int main(int argc, char *argv[])
 				tfile<<gama[j][i]<<"  ";
 			}
 			tfile<<endl;
-		}	
-		tfile<<"  ---------End----"<<endl; 
+		}
+		tfile<<"  ---------End----"<<endl;
 */
 		tfile<<endl<<"thminPower"<<endl;
 		for(i=0;i<thUnitNum;i++)
@@ -871,7 +858,6 @@ int main(int argc, char *argv[])
 		{
 			tfile<<minWindPower[w]<<" ";
 		 }
-		
 		tfile.close();
 
 		//************************火电变量定义***********************
@@ -902,7 +888,7 @@ int main(int argc, char *argv[])
 			thermalR[i] = IloNumVarArray(env,cycle+1,0,thmaxR[i],ILOFLOAT);
 			thermalRN[i] = IloNumVarArray(env,cycle+1,0,thmaxR[i],ILOFLOAT);
 			startUp[i] = IloNumVarArray(env, cycle+1, 0, 1, ILOINT);
-			shutDown[i] = IloNumVarArray(env,cycle+1,0,1,ILOINT);	
+			shutDown[i] = IloNumVarArray(env,cycle+1,0,1,ILOINT);
 			upCost[i] = IloNumVarArray(env,cycle+1,0,thcoldUpCost[i],ILOFLOAT);
 			fuelCost[i] = IloNumVarArray(env,cycle+1,0,thmaxFuelCost[i],ILOFLOAT);
 		}
@@ -949,7 +935,6 @@ int main(int argc, char *argv[])
 		/******************************************** End *************************************************************/
 		//***********************火电机组约束***********************
 		//初始状态约束
-    
 		for(i = 0; i < thUnitNum; i++)
 		{
 			if(thinitState[i] < 0)
@@ -960,17 +945,16 @@ int main(int argc, char *argv[])
 			}
 			else if(thinitState[i] > 0)
 			{
-				model.add(state[i][0] == 1);								
-				model.add(thermalR[i][0]==0);
+				model.add(state[i][0] == 1);
+        model.add(thermalR[i][0]==0);
 			}
 		}
 
-    
 		//初始开关机约束
 		for(i = 0; i< thUnitNum; i++)
 		{
 			model.add(startUp[i][0] == 0);
-			model.add(shutDown[i][0] == 0);		
+			model.add(shutDown[i][0] == 0);
 		}
 
 		//开关机状态约束（即状态转移约束）
@@ -1055,7 +1039,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		//启动费用约束	  
+		//启动费用约束
 		for(i=0;i<thUnitNum;i++)
 		{
 			for(t=1;t<cycle+1;t++)
@@ -1066,17 +1050,14 @@ int main(int argc, char *argv[])
 		}
 
 		//爬升，首末开机
-
 		for (i=0;i<thUnitNum; i++)
 		{
 			for (t=1; t<cycle+1;t++)
 			{
 				model.add(IloAbs(thermalPower[i][t] - thermalPower[i][t-1]) <= thdelta[i]);
 			}
-
 		}
 
-		//**********************************************约束**************************************************
 		//负荷平衡约束
 		for( t=1;t<cycle+1;t++)
 		{
@@ -1176,7 +1157,6 @@ int main(int argc, char *argv[])
 			model.add(thsumN + hysumN >= sysReserve[t] +  windRN);  //负备用约束
 		}
 
-			/**************************************************************/
 			//传输线安全约束
 			for(t=1;t<cycle+1;t++)
 			{
@@ -1218,13 +1198,13 @@ int main(int argc, char *argv[])
 					{
 						sumGamaO += gama[l][outputLocation[o]-1]*outputPower[o][t];
 					}
-					model.add(thsum + hydsum + windsum + solarsum + sumGamaO - demandsum + 4*lineCap[l] >= 0);
-          // The constraint below doesn't work.
-					model.add(thsum + hydsum + windsum + solarsum +  sumGamaO - demandsum - 4*lineCap[l] <= 0 );
+          if( lineCap[l] < 1000 )
+              lineCap[l] = 4*lineCap[l];
+					model.add(thsum + hydsum + windsum + solarsum + sumGamaO - demandsum + lineCap[l] >= 0);
+					model.add(thsum + hydsum + windsum + solarsum + sumGamaO - demandsum - lineCap[l] <= 0 );
 				}
 			}
-
-/*			//断面约束
+     	//断面约束
 			for(t=0;t<cycle;t++)
 			{
 				for(int i_sec=0;i_sec<sectionNum;i_sec++)
@@ -1272,7 +1252,6 @@ int main(int argc, char *argv[])
 					model.add(secsum<=upSectionCap[i_sec]);
 				}
 			}
-*/
 			//建立优化目标函数
 			IloExpr obj(env);
 			for(t=1;t<cycle+1;t++)	{
