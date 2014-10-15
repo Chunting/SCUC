@@ -946,7 +946,7 @@ int main(int argc, char *argv[])
 			else if(thinitState[i] > 0)
 			{
 				model.add(state[i][0] == 1);
-        model.add(thermalR[i][0]==0);
+				model.add(thermalR[i][0]==0);
 			}
 		}
 
@@ -1146,8 +1146,8 @@ int main(int argc, char *argv[])
 
 			for(k=0;k<hyUnitNum;k++)
 			{
-        if( hyPower[k][t] < 0 ) hyPower[k][t] = 0;
-        if( hyPower[k][t] > maxHyUnitPower[k] ) hyPower[k][t] = maxHyUnitPower[k];
+				if( hyPower[k][t] < 0 ) hyPower[k][t] = 0;
+				if( hyPower[k][t] > maxHyUnitPower[k] ) hyPower[k][t] = maxHyUnitPower[k];
 				model.add(hydroR1[k][t] == IloAbs( maxHyUnitPower[k] - hyPower[k][t] ));
 				model.add(hydroR2[k][t] == IloAbs( hyPower[k][t] - minHyUnitPower[k] ));
 				hysum += hydroR1[k][t];
@@ -1266,9 +1266,6 @@ int main(int argc, char *argv[])
 
 			IloCplex cplex(model);
 			cplex.setParam(cplex.EpGap,0.001);//relative MIP gap tolerance
-			//	cplex.setParam(cplex.NodeFileInd,3);
-			//	cplex.setParam(cplex.TiLim,100);
-
 			cplex.extract(model);
 			cplex.solve();
 			cplex.exportModel(lp);//与IloCplex.importModel对应，可以读回模型
@@ -1300,9 +1297,9 @@ int main(int argc, char *argv[])
 			if(!outf)
 				cout<<"cannot open 'Result.dat'"<<OUTFILERESULT<<endl;
 			outf<<"state"<<endl;
-			for(t=1;t<cycle+1;t++)
+			for(i=0;i<thUnitNum;i++)
 			{
-				for(i=0;i<thUnitNum;i++)
+				for(t=1;t<cycle+1;t++)
 				{
 					if(cplex.getValue(state[i][t])<_INF)
 						outf<<"0\t";
@@ -1311,7 +1308,6 @@ int main(int argc, char *argv[])
 				}
 				outf<<endl;
 			}
-
 			outf<<endl<<"thermalPower"<<endl;
 			for(i=0;i<thUnitNum;i++)
 			{
@@ -1337,7 +1333,18 @@ int main(int argc, char *argv[])
 				}
 				outf<<endl;
 			}
-
+			outf<<endl<<"hydroR1"<<endl;
+			for(k=0;k<hyUnitNum;k++)
+			{
+				for(t=1;t<cycle+1;t++)
+				{
+					if(cplex.getValue(hydroR1[k][t])<1e-7)
+						outf<<"0\t";
+					else
+						outf<<cplex.getValue(hydroR1[k][t])<<"\t";
+				}
+				outf<<endl;
+			}
 			outf<<"current[l][t]"<<endl;
 			double current[655][97];
 			for(l= 0; l< lineNum; l++) {
@@ -1352,15 +1359,13 @@ int main(int argc, char *argv[])
 					{
 						gamaD+=gama[l][demandLocation[d]-1]*Demand[d][t];
 					}
-          current[l][t]=gamap-gamaD;
+					current[l][t]=gamap-gamaD;
 					outf<<current[l][t]<<"\t";
 
 				}
 				outf<<endl;
 			}
-
 			outf<<endl;
-
 		}
 		catch (IloException& e)
 		{
