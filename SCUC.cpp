@@ -14,6 +14,11 @@ By Chunting
 /************************ Define all the files ***************************************************/
 #define OUTFILEDATA "./New_Output/Check.dat"
 #define OUTFILERESULT "./New_Output/Result.dat"
+#define OUTFILETHPOWER "./New_Output/Thermal_Power.dat"
+#define OUTFILETHSTATE "./New_Output/Thermal_State.dat"
+#define OUTFILETHRESERVE "./New_Output/Thermal_Reserve.dat"
+#define OUTFILEHYRESERVE "./New_Output/Hydro_Reserve.dat"
+#define OUTFILELINE "./New_Output/Line.dat"
 #define lp "./New_Output/Model.lp"
 #define SYSTEMDATA "./New_Input/SystemData.dat"
 #define APPDATA "./New_Input/AppData.dat"
@@ -1198,8 +1203,8 @@ int main(int argc, char *argv[])
 					{
 						sumGamaO += gama[l][outputLocation[o]-1]*outputPower[o][t];
 					}
-          if( lineCap[l] < 1000 )
-              lineCap[l] = 4*lineCap[l];
+					if( lineCap[l] < 1000 )
+						lineCap[l] = 4*lineCap[l];
 					model.add(thsum + hydsum + windsum + solarsum + sumGamaO - demandsum + lineCap[l] >= 0);
 					model.add(thsum + hydsum + windsum + solarsum + sumGamaO - demandsum - lineCap[l] <= 0 );
 				}
@@ -1277,9 +1282,8 @@ int main(int argc, char *argv[])
 
 			ofstream outf(OUTFILERESULT,ios::out);
 			if(!outf)
-				cout<<"cannot open 'result.dat'"<<OUTFILERESULT<<endl;
+				cout<<"cannot open "<<OUTFILERESULT<<endl;
 
-			outf<<"Result"<<endl;
 			outf<<"Solution status\t"<<cplex.getStatus()<<endl;
 			outf<<"Solution value\t"<<cplex.getObjValue()<<endl;
 			outf<<"Solution time\t"<<timer.getTime()<<endl;
@@ -1294,61 +1298,78 @@ int main(int argc, char *argv[])
 			}
 			cout<<endl<<"allFuelCost = "<<allFuelCost<<endl;
 			outf<<"allFuelCost\t"<<allFuelCost<<endl;
-			if(!outf)
-				cout<<"cannot open 'Result.dat'"<<OUTFILERESULT<<endl;
-			outf<<"state"<<endl;
+			outf.close();
+
+			ofstream outf1( OUTFILETHSTATE, ios::out );
+			if(!outf1)
+				cout<<"cannot open "<<OUTFILETHSTATE<<endl;
 			for(i=0;i<thUnitNum;i++)
 			{
 				for(t=1;t<cycle+1;t++)
 				{
 					if(cplex.getValue(state[i][t])<_INF)
-						outf<<"0\t";
+						outf1<<"0\t";
 					else
-						outf<<cplex.getValue(state[i][t])<<"\t";
+						outf1<<cplex.getValue(state[i][t])<<"\t";
 				}
-				outf<<endl;
+				outf1<<endl;
 			}
-			outf<<endl<<"thermalPower"<<endl;
+			outf1.close();
+
+			ofstream outf2( OUTFILETHPOWER, ios::out );
+			if(!outf2)
+				cout<<"cannot open "<<OUTFILETHPOWER<<endl;
 			for(i=0;i<thUnitNum;i++)
 			{
 				for(t=1;t<cycle+1;t++)
 				{
 					if(cplex.getValue(thermalPower[i][t])<_INF)
-						outf<<"0\t";
+						outf2<<"0\t";
 					else
-						outf<<cplex.getValue(thermalPower[i][t])<<"\t";
+						outf2<<cplex.getValue(thermalPower[i][t])<<"\t";
 				}
-				outf<<endl;
+				outf2<<endl;
 			}
+			outf2.close();
 
-			outf<<endl<<"thermalR"<<endl;
+			ofstream outf3(OUTFILETHRESERVE,ios::out);
+			if(!outf3)
+				cout<<"cannot open "<<OUTFILETHRESERVE<<endl;
 			for(i=0;i<thUnitNum;i++)
 			{
 				for(t=1;t<cycle+1;t++)
 				{
 					if(cplex.getValue(thermalR[i][t])<1e-7)
-						outf<<"0\t";
+						outf3<<"0\t";
 					else
-						outf<<cplex.getValue(thermalR[i][t])<<"\t";
+						outf3<<cplex.getValue(thermalR[i][t])<<"\t";
 				}
-				outf<<endl;
+				outf3<<endl;
 			}
-			outf<<endl<<"hydroR1"<<endl;
+			outf3.close();
+
+			ofstream outf4( OUTFILEHYRESERVE, ios::out );
+			if(!outf4)
+				cout<<"cannot open "<<OUTFILEHYRESERVE<<endl;
 			for(k=0;k<hyUnitNum;k++)
 			{
 				for(t=1;t<cycle+1;t++)
 				{
 					if(cplex.getValue(hydroR1[k][t])<1e-7)
-						outf<<"0\t";
+						outf4<<"0\t";
 					else
-						outf<<cplex.getValue(hydroR1[k][t])<<"\t";
+						outf4<<cplex.getValue(hydroR1[k][t])<<"\t";
 				}
-				outf<<endl;
+				outf4<<endl;
 			}
-			outf<<"current[l][t]"<<endl;
+			outf4.close();
+
+			ofstream outf5(OUTFILELINE,ios::out);
+			if(!outf5)
+				cout<<"cannot open "<<OUTFILELINE<<endl;
 			double current[655][97];
 			for(l= 0; l< lineNum; l++) {
-			for (t = 1; t < cycle+1; t++)	{
+				for (t = 1; t < cycle+1; t++)	{
 					double gamap=0;
 					for (i = 0; i < thUnitNum; i++)
 					{
@@ -1359,13 +1380,34 @@ int main(int argc, char *argv[])
 					{
 						gamaD+=gama[l][demandLocation[d]-1]*Demand[d][t];
 					}
-					current[l][t]=gamap-gamaD;
-					outf<<current[l][t]<<"\t";
+					double gamaHydro = 0;
+					for(k=0; k<hyUnitNum; k++)
+					{
+						gamaHydro += gama[l][hyUnitLocation[k]-1]*hyPower[k][t];
+					}
+					double gamaWind = 0;
+					for(w=0; w<wFieldNum; w++)
+					{
+						gamaWind += gama[l][windLocation[w]-1]*windPower[w][t];
+					}
+					double gamaSolar = 0;
+					for(s=0;s<sPlantNum;s++)
+					{
+						gamaSolar += gama[l][sPlantLocation[s]-1]*maxSPlantPower[s][t];
+					}
+
+					double gamaOutput = 0;
+					for (o= 0; o < outputNum; ++o)
+					{
+						gamaOutput += gama[l][outputLocation[o]-1]*outputPower[o][t];
+					}
+					current[l][t]=gamap + gamaHydro + gamaWind + gamaSolar + gamaOutput - gamaD;
+					outf5<<current[l][t]<<"\t";
 
 				}
-				outf<<endl;
+				outf5<<endl;
 			}
-			outf<<endl;
+			outf5.close();
 		}
 		catch (IloException& e)
 		{
